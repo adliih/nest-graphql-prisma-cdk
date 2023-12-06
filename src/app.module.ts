@@ -13,6 +13,9 @@ import { AppResolver } from './app.resolver';
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
       sortSchema: true,
       playground: true,
+      buildSchemaOptions: {
+        numberScalarMode: 'integer',
+      },
     }),
   ],
   controllers: [AppController],
