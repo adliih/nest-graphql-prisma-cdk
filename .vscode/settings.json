@@ -1,3 +1,7 @@
 {
-  "exportall.config.folderListener": ["/src/prisma/services"]
+  "exportall.config.folderListener": [
+    "/src/prisma/services",
+    "/infra/lib/helpers",
+    "/infra/lib/constructs"
+  ]
 }
