@@ -1,0 +1,119 @@
+name: CI / CD
+
+on:
+  workflow_dispatch:
+    inputs:
+      SKIP_DEPLOYMENT:
+        type: boolean
+        description: 'Option to skip deployment'
+        default: false
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js and pnpm
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Generate Prisma
+        run: pnpm prisma generate
+
+      - name: Run Unit Tests
+        run: pnpm test
+
+      - name: Report Status
+        uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          notification_title: '{branch} | {emoji} {job}: {status_message}'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  cdk:
+    needs:
+      - test
+    runs-on: ubuntu-latest
+    concurrency: cdk
+    outputs:
+      deployed: ${{ steps.deploy.outputs.deployed }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Infra Dependencies
+        working-directory: infra
+        run: pnpm install
+
+      - name: CDK Synth
+        working-directory: infra
+        run: pnpm cdk synth
+
+      - name: CDK Diff
+        working-directory: infra
+        run: pnpm cdk diff
+
+      - name: CDK Deploy
+        id: deploy
+        if: inputs.SKIP_DEPLOYMENT == false && github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+        working-directory: infra
+        run: |
+          pnpm cdk deploy --require-approval never --hotswap-fallback
+          echo "deployed=true" >> $GITHUB_OUTPUT
+
+      - name: Report Status
+        uses: ravsamhq/notify-slack-action@v2
+        if: always()
+        with:
+          status: ${{ job.status }}
+          notification_title: '{branch} | {emoji} {job}: {status_message}'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+  migration:
+    needs:
+      - test
+      - cdk
+    if: ${{ needs.cdk.outputs.deployed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: pnpm install
+
+      - name: Running Migration
+        run: pnpm prisma migrate deploy
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}

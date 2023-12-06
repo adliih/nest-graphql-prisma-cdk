@@ -1,0 +1,26 @@
+name: Run Seed
+
+on:
+  workflow_dispatch:
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: pnpm
+
+      - name: Generate Prisma
+        run: pnpm generate
+
+      - name: Running Seed
+        run: pnpm seed
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
