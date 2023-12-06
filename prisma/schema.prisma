@@ -1,0 +1,20 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator nestgraphql {
+  provider        = "prisma-nestjs-graphql"
+  output          = "../src/@generated-gql"
+  emitBlocks      = ["models", "enums"]
+  omitModelsCount = true
+  reExport        = Single
+  noTypeId        = true
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
