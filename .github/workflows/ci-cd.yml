@@ -13,6 +13,8 @@ on:
   pull_request:
     branches:
       - main
+env:
+  NODE_VER: 18
 
 jobs:
   test:
@@ -21,10 +23,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js and pnpm
-        uses: actions/setup-node@v3
+      - uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: ${{ env.NODE_VER }}
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
 
       - name: Install Dependencies
         run: pnpm install
@@ -35,19 +39,11 @@ jobs:
       - name: Run Unit Tests
         run: pnpm test
 
-      - name: Report Status
-        uses: ravsamhq/notify-slack-action@v2
-        if: always()
-        with:
-          status: ${{ job.status }}
-          notification_title: '{branch} | {emoji} {job}: {status_message}'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
   cdk:
     needs:
       - test
     runs-on: ubuntu-latest
+    if: secrets.AWS_ACCESS_KEY_ID != ""
     concurrency: cdk
     outputs:
       deployed: ${{ steps.deploy.outputs.deployed }}
@@ -63,9 +59,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VER }}
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
 
       - name: Install Infra Dependencies
         working-directory: infra
@@ -87,15 +86,6 @@ jobs:
           pnpm cdk deploy --require-approval never --hotswap-fallback
           echo "deployed=true" >> $GITHUB_OUTPUT
 
-      - name: Report Status
-        uses: ravsamhq/notify-slack-action@v2
-        if: always()
-        with:
-          status: ${{ job.status }}
-          notification_title: '{branch} | {emoji} {job}: {status_message}'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-
   migration:
     needs:
       - test
@@ -106,9 +96,12 @@ jobs:
       - name: Checkout Repository
         uses: actions/checkout@v3
 
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
-          node-version: '18'
+          node-version: ${{ env.NODE_VER }}
+
+      - uses: pnpm/action-setup@v2
+        name: Install pnpm
 
       - name: Install Dependencies
         run: pnpm install
