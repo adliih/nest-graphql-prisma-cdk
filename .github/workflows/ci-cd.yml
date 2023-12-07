@@ -43,7 +43,7 @@ jobs:
     needs:
       - test
     runs-on: ubuntu-latest
-    if: secrets.AWS_ACCESS_KEY_ID != ""
+    if: vars.ENABLE_CDK == 'true'
     concurrency: cdk
     outputs:
       deployed: ${{ steps.deploy.outputs.deployed }}
