@@ -7,6 +7,7 @@ import { join } from 'path';
 import { AppResolver } from './app.resolver';
 import { PrismaModule } from './prisma/prisma.module';
 import { HealthModule } from './health/health.module';
+import { AuthModule } from './auth/auth.module';
 import { ConfigModule } from '@nestjs/config';
 
 @Module({
@@ -25,6 +26,7 @@ import { ConfigModule } from '@nestjs/config';
     }),
     PrismaModule,
     HealthModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppResolver],

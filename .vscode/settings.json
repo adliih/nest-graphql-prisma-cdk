@@ -2,6 +2,11 @@
   "exportall.config.folderListener": [
     "/src/prisma/services",
     "/infra/lib/helpers",
-    "/infra/lib/constructs"
+    "/infra/lib/constructs",
+    "/src/auth/services",
+    "/src/auth/guards",
+    "/src/auth/stragies",
+    "/src/auth/decorators",
+    "/src/auth/dto"
   ]
 }
