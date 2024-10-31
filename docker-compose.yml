@@ -2,9 +2,16 @@ version: '3.8'
 services:
   dev-db:
     image: postgres:12
-    ports:
-      - 5432:5432
     environment:
       POSTGRES_USER: johndoe
       POSTGRES_PASSWORD: randompassword
       POSTGRES_DB: mydb
+  app:
+    profiles: [app]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    env_file:
+      - .env
