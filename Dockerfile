@@ -18,12 +18,12 @@ RUN pnpm prisma generate
 RUN pnpm build
 RUN pnpm prune --prod
 RUN ncc build dist/main.js -o dist-ncc
+# prisma engine should be located alongside index.js, but ncc bundler create client subfolder
+RUN mv dist-ncc/client/* dist-ncc/
 
 FROM node:18-alpine
 
 WORKDIR /app
 COPY --from=build /app/dist-ncc .
-# prisma engine should be located alongside index.js, but ncc bundler create client subfolder
-RUN mv client/* .
 
 CMD [ "node", "index.js" ]
